@@ -20,11 +20,11 @@ def normalize(morph, string):
 
 
 def canonize(source):
-    stop_symbols = u'.,!?:;-\n\r()«»'
+    stop_symbols = u'.,!?:;-\n\r()«»' + string.punctuation
     stop_words = (u'это', u'как', u'так', u'и', u'в', u'над', u'к', u'до', u'не', u'на', u'но', u'за', u'то', u'с', u'об', u'по', u'—', u'из',
         u'ли', u'а', u'во', u'от', u'со', u'для', u'о', u'же', u'ну', u'вы', u'бы', u'что', u'кто', u'он', u'она', u'этом', u'также', u'его')
     morph = pymorphy2.MorphAnalyzer()
-    return [normalize(morph, g) for g in [x for x in [y.strip(stop_symbols) for y in source.lower().replace(string.punctuation, u'').split()] if x and (x not in stop_words)]]
+    return [normalize(morph, g) for g in [x for x in [y.strip(stop_symbols) for y in source.lower().split()] if x and (x not in stop_words)]]
 
 
 def get_freq(filename):
