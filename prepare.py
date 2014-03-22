@@ -2,17 +2,29 @@
 # -*- coding: utf-8 -*-
 
 import json
+import pymorphy2
+import string
+from liblinearutil import *
+
 
 def readfile(filename):
     with open(filename) as f:
         return f.read().decode('utf8').replace(u'\n', u' ')
 
 
+def normalize(morph, string):
+	res = morph.parse(string)
+	if not res:
+		return string
+	return res[0].normal_form
+
+
 def canonize(source):
-    stop_symbols = u'.,!?:;-\n\r()'
+    stop_symbols = u'.,!?:;-\n\r()«»'
     stop_words = (u'это', u'как', u'так', u'и', u'в', u'над', u'к', u'до', u'не', u'на', u'но', u'за', u'то', u'с', u'об', u'по', u'—', u'из',
         u'ли', u'а', u'во', u'от', u'со', u'для', u'о', u'же', u'ну', u'вы', u'бы', u'что', u'кто', u'он', u'она', u'этом', u'также', u'его')
-    return ([x for x in [y.strip(stop_symbols) for y in source.lower().split()] if x and (x not in stop_words)])
+    morph = pymorphy2.MorphAnalyzer()
+    return [normalize(morph, g) for g in [x for x in [y.strip(stop_symbols) for y in source.lower().replace(string.punctuation, u'').split()] if x and (x not in stop_words)]]
 
 
 def get_freq(filename):
@@ -74,18 +86,25 @@ def save_freqs(freqs, filename):
 
 
 def main():
-    files = [('arts/u1', True), ('arts/u2', True), ('arts/u3', True), ('arts/u4', True), ('arts/u5', True),
-    ('arts/o1', False), ('arts/o2', False), ('arts/o3', False), ('arts/o4', False), ('arts/o5', False)]
-    files2 = [('arts/to1', False), ('arts/tu1', True)]
-    freqs = get_top_freq(files)
+	files = [('arts/u1', True), ('arts/u2', True), ('arts/u3', True), ('arts/u4', True), ('arts/u5', True),
+	('arts/o1', False), ('arts/o2', False), ('arts/o3', False), ('arts/o4', False), ('arts/o5', False)]
+	files2 = [('arts/to1', False), ('arts/tu1', True)]
+	freqs = get_top_freq(files)
 
-    print 'freqs'
-    for w, f in freqs:
-        print w, f
+	print 'freqs'
+	for w, f in freqs:
+		print w, f
 
-    create_dataset(files, freqs, 'dataset')
-    create_dataset(files2, freqs, 'testset')
-    save_freqs(freqs, "features")
+	create_dataset(files, freqs, 'dataset')
+	create_dataset(files2, freqs, 'testset')
+	# save_freqs(freqs, "features")
+
+	print '\nSVM:'
+	y, x = svm_read_problem('dataset')
+	m = train(y, x, '-c 4')
+	p_label, p_acc, p_val = predict(y, x, m)
+	y, x = svm_read_problem('testset')
+	p_label, p_acc, p_val = predict(y, x, m)
 
 
 if __name__ == '__main__':
